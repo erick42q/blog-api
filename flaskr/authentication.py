@@ -1,6 +1,7 @@
 import functools
 import jwt
 import uuid
+import datetime
 from flask import (
     Blueprint,
     flash,
@@ -13,9 +14,10 @@ from flask import (
     jsonify,
     url_for,
     make_response,
+    current_app,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
-
+import flaskr
 from flaskr.db import get_db
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -30,9 +32,9 @@ def get_users():
         user_json = {
             "id": str(user["id"]),
             "username": user["username"],
-            "public_id": user["public_id"]
+            "public_id": user["public_id"],
         }
-        
+
         response.append(user_json)
 
     print(response)
@@ -93,36 +95,14 @@ def login():
             "SELECT * FROM user WHERE username = ?", (auth["username"],),
         ).fetchone()
 
-        print(user['id'])
-
         if check_password_hash(user["password"], auth.password):
-            pass
-            # token = jwt.encode(
-            #     {
-            #         "public_id": user["public_id"],
-            #         # "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=30),
-            #     },
-            #     app.config["SECRET_KEY"],
-            # )
-            # token = jwt.encode({"public_id": user["public_id"]}, app.config["SECRET_KEY"])
 
-        # username = request.json.get("username")
-        # password = request.json.get("password")
-        # db = get_db()
-        # error = None
+            token = jwt.encode(
+                {
+                    "public_id": user["public_id"],
+                    "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=30),
+                },
+                current_app.config["SECRET_KEY"],
+            )
 
-        # user = db.execute(
-        #     "SELECT * FROM user WHERE username = ?", (username,),
-        # ).fetchone()
-
-        # if user is None:
-        #     error = "Incorrect username."
-
-        # elif not check_password_hash(user["password"], password):
-        #     error = "Incorrect password."
-
-        # if error is None:
-
-        #     pass
-        # else:
-        #     abort(make_response(error, 404))
+            return make_response({"authorization": "jwt {}".format(token.decode("utf8"))})

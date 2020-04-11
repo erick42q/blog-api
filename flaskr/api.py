@@ -16,7 +16,6 @@ from flaskr.auth import login_required
 bp = Blueprint("api", __name__, url_prefix="/api/")
 
 
-
 @bp.route("/", methods=("GET", "POST"))
 def api_list():
     if request.method == "GET":
