@@ -9,31 +9,12 @@ from flask import (
     abort,
     make_response,
 )
+
 from flaskr.db import get_db
 from flaskr.auth import login_required
 
-bp = Blueprint("api", __name__)
+bp = Blueprint("api", __name__, url_prefix="/api/")
 
-
-def get_post(id, check_author=True):
-    post = (
-        get_db()
-        .execute(
-            "SELECT p.id, title, body, created, author_id, username"
-            " FROM post p JOIN user u ON p.author_id = u.id"
-            " WHERE p.id = ?",
-            (id,),
-        )
-        .fetchone()
-    )
-
-    if post is None:
-        abort(404, "Post id {0} doesn't exist.".format(id))
-
-    if check_author and post["author_id"] != g.user["id"]:
-        abort(403)
-
-    return post
 
 
 @bp.route("/", methods=("GET", "POST"))
@@ -64,7 +45,6 @@ def api_list():
 
         title = request.json.get("title")
         body = request.json.get("body")
-        error = None
 
         if not title:
             abort(make_response({"error": "Title is required."}, 400))
@@ -76,11 +56,13 @@ def api_list():
             db = get_db()
             db.execute(
                 "INSERT INTO post (title, body, author_id)" " VALUES (?, ?, ?)",
-                (title, body, g.user["id"]),
+                (title, 
+                body, 
+                g.user["id"]),
             )
             db.commit()
 
-            return make_response(jsonify({"report": "post created"}), 201)
+            return make_response({"report": "post created"}, 201)
 
 
 def get_post(id, check_author=True):
