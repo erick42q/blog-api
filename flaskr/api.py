@@ -11,6 +11,7 @@ from flask import (
 )
 
 from flaskr.db import get_db
+
 # from flaskr.auth import login_required
 from flaskr.authentication import token_required
 
@@ -18,7 +19,6 @@ bp = Blueprint("api", __name__, url_prefix="/api/")
 
 
 @bp.route("/", methods=("GET", "POST"))
-@token_required 
 def api_list():
     if request.method == "GET":
         db = get_db()
@@ -42,7 +42,11 @@ def api_list():
 
         return jsonify(response)
 
-    elif request.method == "POST":
+
+@bp.route("/create-post", methods=("GET", "POST"))
+@token_required
+def create_post(user, *args, **kwargs):
+    if request.method == "POST":
 
         title = request.json.get("title")
         body = request.json.get("body")
@@ -54,19 +58,18 @@ def api_list():
             abort(make_response({"error": "Invalid data request"}, 400))
 
         else:
+            # print(user['id'])
             db = get_db()
             db.execute(
                 "INSERT INTO post (title, body, author_id)" " VALUES (?, ?, ?)",
-                (title, 
-                body, 
-                g.user["id"]),
+                (title, body, user["id"]),
             )
             db.commit()
 
             return make_response({"report": "post created"}, 201)
 
 
-def get_post(id, check_author=True):
+def get_post(id, user_id, check_author=True):
     post = (
         get_db()
         .execute(
@@ -78,22 +81,22 @@ def get_post(id, check_author=True):
         .fetchone()
     )
 
-    if post is None:
-        abort(404, "Post id {0} doesn't exist.".format(id))
-
-    if check_author and post["author_id"] != g.user["id"]:
-        abort(403)
+    # if post["author_id"] != user_id:
+    #     abort(403)
 
     return post
 
 
 @bp.route("/<int:id>", methods=("GET", "PUT", "DELETE"))
-@token_required 
-def api_detail(id):
+@token_required
+def api_detail(user, id, *args, **kwargs):
     if request.method == "GET":
-        post = get_post(id)
 
-        print(post["id"])
+        post = get_post(id, user["id"])
+        
+        if post is None:
+            return make_response("Post id {0} doesn't exist.".format(id) ,404)
+
         response = {
             "id": post["id"],
             "title": post["title"],
@@ -123,7 +126,7 @@ def api_detail(id):
             )
             db.commit()
 
-            post = get_post(id)
+            post = get_post(id, user["id"])
 
             response = {
                 "id": post["id"],
@@ -133,8 +136,14 @@ def api_detail(id):
             return make_response(response, 200)
 
     if request.method == "DELETE":
-        get_post(id)
+        # get_post(id, user["id"])
         db = get_db()
         db.execute("DELETE FROM post WHERE id = ?", (id,))
         db.commit()
-        return make_response(jsonify({"report": "post {} deleted".format(id)}), 204)
+
+        post = get_post(id, user["id"])
+
+        if post is None:
+            return make_response("post {} deleted".format(id), 204)
+
+        return make_response("post not {} deleted", 400)
