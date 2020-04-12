@@ -1,4 +1,4 @@
-import functools
+from functools import wraps
 import jwt
 import uuid
 import datetime
@@ -23,6 +23,45 @@ from flaskr.db import get_db
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 
+def token_required(f):
+    @wraps(f)
+    def decorator(*args, **kwargs):
+
+        token = None
+        db = get_db()
+        if "authorization" in request.headers:
+            token = request.headers["authorization"]
+
+        if not token:
+            return jsonify({"message": "a valid token is missing"})
+
+        try:
+            print("teste")
+            print("-----------")
+            print(token)
+            print("-----------")
+            print(current_app.config["SECRET_KEY"])
+            print("-----------")
+
+            data = jwt.decode(token, current_app.config["SECRET_KEY"])
+
+            print(data["public_id"])
+            current_user = db.execute(
+                "SELECT * FROM user WHERE public_id = ?", (data["public_id"],)
+            ).fetchone()
+                        # db.execute("SELECT id FROM user WHERE username = ?", (username,)).fetchone()
+
+            print(current_user)
+            return f()
+
+            # current_user = Users.query.filter_by(public_id=data["public_id"]).first()
+        except:
+            return jsonify({"message": "token is invalid"})
+
+            return f(current_user, *args, **kwargs)
+
+    return decorator
+
 def get_users():
     db = get_db()
     users = db.execute("SELECT id, username, public_id FROM user").fetchall()
@@ -42,6 +81,13 @@ def get_users():
 
     return response
 
+
+@bp.route("/users", methods=("POST", "GET"))
+@token_required
+def users():
+    users = get_users()
+    print(users)
+    return jsonify(users)
 
 @bp.route("/register", methods=("POST", "GET"))
 def register():
@@ -105,4 +151,6 @@ def login():
                 current_app.config["SECRET_KEY"],
             )
 
-            return make_response({"authorization": "jwt {}".format(token.decode("utf8"))})
+            return make_response(
+                {"authorization": "jwt {}".format(token.decode("utf8"))}
+            )

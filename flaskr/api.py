@@ -11,12 +11,14 @@ from flask import (
 )
 
 from flaskr.db import get_db
-from flaskr.auth import login_required
+# from flaskr.auth import login_required
+from flaskr.authentication import token_required
 
 bp = Blueprint("api", __name__, url_prefix="/api/")
 
 
 @bp.route("/", methods=("GET", "POST"))
+@token_required 
 def api_list():
     if request.method == "GET":
         db = get_db()
@@ -86,6 +88,7 @@ def get_post(id, check_author=True):
 
 
 @bp.route("/<int:id>", methods=("GET", "PUT", "DELETE"))
+@token_required 
 def api_detail(id):
     if request.method == "GET":
         post = get_post(id)
