@@ -42,7 +42,10 @@ class AuthActions(object):
         self._client = client
 
     def login(self, username="test", password="test123"):
-        credentials = b64encode(b"{username}:{password}").decode('utf-8')
+
+        data = "{}:{}".format(username, password).encode()
+
+        credentials = b64encode(data).decode('utf-8')
         return self._client.post(
             "/auth/login", headers={"Authorization": f"Basic {credentials}"}
         )

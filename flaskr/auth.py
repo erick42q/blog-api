@@ -33,11 +33,11 @@ def token_required(f):
             token = request.headers["authorization"]
 
         if not token:
-            return jsonify({"message": "a valid token is missing"})
+            return make_response(jsonify({"message": "a valid token is missing"}), 400)
 
         try:
 
-            data = jwt.decode(token, current_app.config["SECRET_KEY"])
+            data = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=['HS256'])
             current_user = db.execute(
                 "SELECT * FROM user WHERE public_id = ?", (data["public_id"],)
             ).fetchone()
@@ -46,7 +46,7 @@ def token_required(f):
 
             # current_user = Users.query.filter_by(public_id=data["public_id"]).first()
         except:
-            return jsonify({"message": "token is invalid"})
+            return make_response(jsonify({"message": "token is invalid"}), 400)
 
 
     return decorator
@@ -72,7 +72,7 @@ def get_users():
 @token_required
 def users(*args, **kwargs):
     users = get_users()
-    return jsonify(users)
+    return make_response(jsonify(users), 200)
 
 @bp.route("/register", methods=("POST", "GET"))
 def register():
@@ -145,3 +145,5 @@ def login():
             return make_response(
                 {"authorization": "jwt {}".format(token.decode("utf8"))}
             )
+    else:
+        return make_response("invalid request", 200)
