@@ -77,23 +77,24 @@ def users(*args, **kwargs):
 @bp.route("/register", methods=("POST", "GET"))
 def register():
     if request.method == "POST":
-        username = request.json.get("username")
-        password = request.json.get("password")
+        body = request.get_json()
+        username = body['username']
+        password = body['password']
         db = get_db()
 
+        print(username)
         if not username:
-            abort(make_response({"error": "username is required."}, 400))
+            abort(make_response({"error": "Username is required."}, 400))
 
         elif not password:
-            abort(make_response({"error": "password is required."}, 400))
-
+            abort(make_response({"error": "Password is required."}, 400))
         elif (
             db.execute("SELECT id FROM user WHERE username = ?", (username,)).fetchone()
             is not None
         ):
             abort(
                 make_response(
-                    {"error": "User {} is already registered.".format(username)}
+                    {"error": "already registered"}
                 )
             )
 
@@ -107,6 +108,9 @@ def register():
             users = get_users()
 
             return jsonify(users)
+    
+    else:
+        return make_response("invalid request", 200)
 
 
 @bp.route("/login", methods=("POST", "GET"))
@@ -126,8 +130,10 @@ def login():
             "SELECT * FROM user WHERE username = ?", (auth["username"],),
         ).fetchone()
 
-        if check_password_hash(user["password"], auth.password):
+        if user == None or not check_password_hash(user["password"], auth.password):
+            return make_response({"error": "Incorrect username or password"})
 
+        if check_password_hash(user["password"], auth.password):
             token = jwt.encode(
                 {
                     "public_id": user["public_id"],

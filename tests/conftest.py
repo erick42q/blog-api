@@ -2,9 +2,11 @@ import os
 import tempfile
 
 import pytest
+from base64 import b64encode
 from flaskr import create_app
 from flaskr.db import get_db, init_db
 
+# with open(os.path.join(os.path.dirname(__file__), "data.sql"), "rb") as f:
 with open(os.path.join(os.path.dirname(__file__), "data.sql"), "rb") as f:
     _data_sql = f.read().decode("utf8")
 
@@ -39,9 +41,10 @@ class AuthActions(object):
     def __init__(self, client):
         self._client = client
 
-    def login(self, username="test", password="test"):
+    def login(self, username="test", password="test123"):
+        credentials = b64encode(b"{username}:{password}").decode('utf-8')
         return self._client.post(
-            "/auth/login", data={"username": username, "password": password}
+            "/auth/login", headers={"Authorization": f"Basic {credentials}"}
         )
 
     def logout(self):
