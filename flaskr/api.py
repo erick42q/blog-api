@@ -12,8 +12,7 @@ from flask import (
 
 from flaskr.db import get_db
 
-# from flaskr.auth import login_required
-from flaskr.authentication import token_required
+from flaskr.auth import token_required
 
 bp = Blueprint("api", __name__, url_prefix="/api/")
 
