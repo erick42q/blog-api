@@ -7,7 +7,6 @@ click==7.1.1
 cryptography==2.9
 decorator==4.4.2
 Flask==1.1.2
--e git+git@github.com:erick-q42/blog-api.git@35cbbf7f5e896da81039cc95a6fee6e6f353c1e9#egg=flaskr
 ipython==7.13.0
 ipython-genutils==0.2.0
 itsdangerous==1.1.0
