@@ -4,7 +4,7 @@ backcall==0.1.0
 black==19.10b0
 cffi==1.14.0
 click==7.1.1
-cryptography==2.9
+cryptography==3.2
 decorator==4.4.2
 Flask==1.1.2
 ipython==7.13.0
